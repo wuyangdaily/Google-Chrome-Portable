@@ -12,6 +12,7 @@
 - 移除更新错误警告，移除不必要的显示（因为是绿色版没有自动更新功能）
 
 以上配置都可以在chrome++.ini中进行修改.
+https://github.com/Bush2021/chrome_plus
 
 # 获取
 
