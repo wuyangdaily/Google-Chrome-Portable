@@ -1,30 +1,66 @@
 name: build
 
+# 允许 workflow 自己 push（保活用）
+permissions:
+  contents: write
+
 on:
+  # 手动触发
   workflow_dispatch:
+
+  # 正常 CI 触发
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+
+  # 定时任务：每周一 08:00（UTC）
   schedule:
     - cron: "0 8 * * 1"
 
 jobs:
+  # =========================
+  # 主构建任务
+  # =========================
   Warp_Chrome:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4.7.1
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v4.7.1
         with:
-          python-version: '3.10'
-      - run: ls
-      - name: prepare env
+          python-version: "3.10"
+
+      - name: Prepare env & build
         run: |
           python3 -m pip install -r requirements.txt
           python3 run.py
-      - name: upload
+
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ env.BUILD_NAME }}
           path: build/release/*
           retention-days: 15
+
+  # =========================
+  # 仓库保活任务（防 60 天停用）
+  # =========================
+  keepalive:
+    # 只在 schedule 触发时运行
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Keep repo alive
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git commit --allow-empty -m "chore: keep repo alive"
+          git push
