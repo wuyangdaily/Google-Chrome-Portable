@@ -7,7 +7,7 @@ on:
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: "0 8 * * 1"
+    - cron: "0 0 * * 1"
 
 jobs:
   Warp_Chrome:
@@ -28,3 +28,24 @@ jobs:
           name: ${{ env.BUILD_NAME }}
           path: build/release/*
           retention-days: 90
+
+  # =========================
+  # 仓库保活任务（防 60 天停用）
+  # =========================
+  keepalive:
+    # 只在 schedule 触发时运行
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Keep repo alive
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git commit --allow-empty -m "chore: keepalive $(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S')" || echo "no changes"
+          git push || echo "push skipped"
